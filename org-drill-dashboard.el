@@ -82,14 +82,19 @@
 	   sum (if (plist-get data-list :empty) 1 0)))
 
 (defun org-drill-dashboard-new-count (data-list)
-  "Return the number of new entry from the DATA-LIST of an org-drill file."
+  "Return the number of new entries from the DATA-LIST of an org-drill file."
   (cl-loop for data in data-list
 	   sum (if (plist-get data-list :new) 1 0)))
 
 (defun org-drill-dashboard-leech-count (data-list)
-  "Return the number of leech entry from the DATA-LIST of an org-drill file."
+  "Return the number of leech entries from the DATA-LIST of an org-drill file."
   (cl-loop for data in data-list
 	   sum (if (plist-get data-list :leech) 1 0)))
 
-(provide 'org-drill-dashboard)
+(defun org-drill-dashboard-avg-avg-quality (data-list)
+  "Return the average quality's average of entries from the DATA-LIST of an org-drill file."
+  (/ (apply #'+ (mapcar (lambda (d) (let ((avg-quality (plist-get d :avg-quality))) (or avg-quality 0))) data-list))
+     (length data-list)))
+
+    (provide 'org-drill-dashboard)
 ;;; org-drill-dashboard.el ends here
