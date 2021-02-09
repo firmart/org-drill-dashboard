@@ -36,3 +36,60 @@
 ;;; Code:
 ;;; Custom group
 ;;;; General settings
+(defgroup org-drill-dashboard nil
+  "Org-drill-dashboard settings."
+  :group 'org
+  :package-version '(org-drill-dashboard . "0.1"))
+
+;; TODO each file is a section
+(defcustom org-drill-dashboard-files nil
+  "List of org-drill files to monitor."
+  :type  '(repeat file)
+  :group 'org-drill-dashboard
+  :package-version '(org-drill-dashboard . "0.1"))
+
+(defun org-drill-dashboard-entry-data ()
+  "Return a property list of the org-drill entry at point."
+  (let (data)
+    (setq data (plist-put data :id (org-entry-get (point) "ID")))
+    (setq data (plist-put data :title (org-entry-get (point) "ITEM")))
+    (setq data (plist-put data :avg-quality (org-drill-entry-average-quality)))
+    (setq data (plist-put data :ease (org-drill-entry-ease)))
+    (setq data (plist-put data :empty (org-drill-entry-empty-p)))
+    (setq data (plist-put data :failure-count (org-drill-entry-failure-count)))
+    (setq data (plist-put data :last-interval (org-drill-entry-last-interval)))
+    (setq data (plist-put data :last-quality (org-drill-entry-last-quality)))
+    (setq data (plist-put data :leech (org-drill-entry-leech-p)))
+    (setq data (plist-put data :new (org-drill-entry-new-p)))
+    (setq data (plist-put data :repeats-since-fail (org-drill-entry-repeats-since-fail)))
+    (setq data (plist-put data :total-repeats (org-drill-entry-total-repeats)))))
+
+(defun org-drill-dashboard-data-list (file)
+  "Return a data list of an org-drill FILE."
+  (let (data-list)
+    (with-temp-buffer
+      (insert-file-contents file)
+      (org-mode) ;; required to fetch the heading
+      (while (not (= (point) (point-max)))
+	(org-next-visible-heading 1)
+	(when (member "drill" (org-get-tags nil t)) ;; exclude inherited tags
+	  (add-to-list 'data-list (org-drill-dashboard-entry-data)))))
+    data-list))
+
+(defun org-drill-dashboard-empty-count (data-list)
+  "Return the number of empty entry from the DATA-LIST of an org-drill file."
+  (cl-loop for data in data-list
+	   sum (if (plist-get data-list :empty) 1 0)))
+
+(defun org-drill-dashboard-new-count (data-list)
+  "Return the number of new entry from the DATA-LIST of an org-drill file."
+  (cl-loop for data in data-list
+	   sum (if (plist-get data-list :new) 1 0)))
+
+(defun org-drill-dashboard-leech-count (data-list)
+  "Return the number of leech entry from the DATA-LIST of an org-drill file."
+  (cl-loop for data in data-list
+	   sum (if (plist-get data-list :leech) 1 0)))
+
+(provide 'org-drill-dashboard)
+;;; org-drill-dashboard.el ends here
