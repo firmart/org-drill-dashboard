@@ -71,6 +71,9 @@
 				  (org-drill-dashboard-new-count data-list)
 				  (org-drill-dashboard-empty-count data-list)
 				  (org-drill-dashboard-leech-count data-list)))
+	       do (insert (format "- due count: %s, overdue count: %s\n"
+				  (org-drill-dashboard-due-count data-list)
+				  (org-drill-dashboard-overdue-count data-list)))
 	       do (insert (format "- average quality: %.2f\n" (org-drill-dashboard-avg-avg-quality data-list))))
     (insert "=org-drill-dashboard-files= is empty !"))
   (org-mode)
@@ -83,6 +86,7 @@
   (let (data)
     (setq data (plist-put data :id (org-entry-get (point) "ID")))
     (setq data (plist-put data :title (org-entry-get (point) "ITEM")))
+    (setq data (plist-put data :due-date (format-time-string "%Y%m%d" (org-get-scheduled-time (point)))))
     (setq data (plist-put data :avg-quality (org-drill-entry-average-quality)))
     (setq data (plist-put data :ease (org-drill-entry-ease)))
     (setq data (plist-put data :empty (org-drill-entry-empty-p)))
@@ -109,17 +113,29 @@
 (defun org-drill-dashboard-empty-count (data-list)
   "Return the number of empty entry from the DATA-LIST of an org-drill file."
   (cl-loop for data in data-list
-	   sum (if (plist-get data-list :empty) 1 0)))
+	   sum (if (plist-get data :empty) 1 0)))
 
 (defun org-drill-dashboard-new-count (data-list)
   "Return the number of new entries from the DATA-LIST of an org-drill file."
   (cl-loop for data in data-list
-	   sum (if (plist-get data-list :new) 1 0)))
+	   sum (if (plist-get data :new) 1 0)))
 
 (defun org-drill-dashboard-leech-count (data-list)
   "Return the number of leech entries from the DATA-LIST of an org-drill file."
   (cl-loop for data in data-list
-	   sum (if (plist-get data-list :leech) 1 0)))
+	   sum (if (plist-get data :leech) 1 0)))
+
+(defun org-drill-dashboard-due-count (data-list)
+  (cl-loop for data in data-list
+	   sum (if (string= (plist-get data :due-date)
+			    (format-time-string "%Y%m%d" (current-time)))
+		   1 0)))
+
+(defun org-drill-dashboard-overdue-count (data-list)
+  (cl-loop for data in data-list
+	   sum (if (string< (plist-get data :due-date)
+			    (format-time-string "%Y%m%d" (current-time)))
+		   1 0)))
 
 (defun org-drill-dashboard-avg-avg-quality (data-list)
   "Return the average quality's average of entries from the
