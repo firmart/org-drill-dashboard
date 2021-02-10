@@ -48,7 +48,37 @@
   :group 'org-drill-dashboard
   :package-version '(org-drill-dashboard . "0.1"))
 
-(defun org-drill-dashboard-entry-data ()
+(defcustom org-drill-dashboard-buffer-name "*org-drill-dashboard*"
+  "Buffer name of `org-drill-dashboard'."
+  :type  'string
+  :group 'org-drill-dashboard
+  :package-version '(org-drill-dashboard . "0.1"))
+
+(defun org-drill-dashboard ()
+  ;; clear `org-drill-dashboard' buffer
+  (interactive)
+  (if (get-buffer org-drill-dashboard-buffer-name)
+      (progn
+	(read-only-mode -1)
+	(delete-region (point-min) (point-max)))
+    (switch-to-buffer org-drill-dashboard-buffer-name))
+  ;; Write down information
+  (if org-drill-dashboard-files
+      (cl-loop for file in org-drill-dashboard-files
+	       as data-list = (org-drill-dashboard-data-list file)
+	       do (insert (format "* %s\n" (file-name-base file)))
+	       do (insert (format "- new: %s, empty: %s, leech: %s\n"
+				  (org-drill-dashboard-new-count data-list)
+				  (org-drill-dashboard-empty-count data-list)
+				  (org-drill-dashboard-leech-count data-list)))
+	       do (insert (format "- average quality: %.2f\n" (org-drill-dashboard-avg-avg-quality data-list))))
+    (insert "=org-drill-dashboard-files= is empty !"))
+  (org-mode)
+  (read-only-mode 1))
+
+;;; Data
+
+(defun org-drill-dashboard-entry-data-at-point ()
   "Return a property list of the org-drill entry at point."
   (let (data)
     (setq data (plist-put data :id (org-entry-get (point) "ID")))
@@ -73,7 +103,7 @@
       (while (not (= (point) (point-max)))
 	(org-next-visible-heading 1)
 	(when (member "drill" (org-get-tags nil t)) ;; exclude inherited tags
-	  (add-to-list 'data-list (org-drill-dashboard-entry-data)))))
+	  (add-to-list 'data-list (org-drill-dashboard-entry-data-at-point)))))
     data-list))
 
 (defun org-drill-dashboard-empty-count (data-list)
@@ -92,9 +122,13 @@
 	   sum (if (plist-get data-list :leech) 1 0)))
 
 (defun org-drill-dashboard-avg-avg-quality (data-list)
-  "Return the average quality's average of entries from the DATA-LIST of an org-drill file."
-  (/ (apply #'+ (mapcar (lambda (d) (let ((avg-quality (plist-get d :avg-quality))) (or avg-quality 0))) data-list))
+  "Return the average quality's average of entries from the
+DATA-LIST of an org-drill file."
+  (/ (apply #'+ (mapcar (lambda (d)
+			  (let ((avg-quality (plist-get d :avg-quality)))
+			    (or avg-quality 0)))
+			data-list))
      (length data-list)))
 
-    (provide 'org-drill-dashboard)
+(provide 'org-drill-dashboard)
 ;;; org-drill-dashboard.el ends here
