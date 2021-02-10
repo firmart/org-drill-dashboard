@@ -35,7 +35,6 @@
 
 ;;; Code:
 ;;; Custom group
-;;;; General settings
 (defgroup org-drill-dashboard nil
   "Org-drill-dashboard settings."
   :group 'org
@@ -54,6 +53,7 @@
   :group 'org-drill-dashboard
   :package-version '(org-drill-dashboard . "0.1"))
 
+;;; Entry point
 (defun org-drill-dashboard ()
   ;; clear `org-drill-dashboard' buffer
   (interactive)
@@ -67,6 +67,7 @@
       (cl-loop for file in org-drill-dashboard-files
 	       as data-list = (org-drill-dashboard-data-list file)
 	       do (insert (format "* %s\n" (file-name-base file)))
+	       do (insert (format "- total: %s\n" (length data-list)))
 	       do (insert (format "- new: %s, empty: %s, leech: %s\n"
 				  (org-drill-dashboard-new-count data-list)
 				  (org-drill-dashboard-empty-count data-list)
